@@ -1,6 +1,4 @@
 # Facebook-Clone
-A repository for text summarization experiments
-
 
 # Install environment:
  - Python version: 3.8.8
