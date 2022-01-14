@@ -6,8 +6,11 @@ import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import config
+from flask_cors import CORS
 
 auth = Blueprint("auth",__name__)
+CORS(auth)
+
 
 def token_required(f):
     @wraps(f)
@@ -35,7 +38,7 @@ def token_required(f):
 
     return decorated
 
-@auth.route("/login", methods = ["GET"])
+@auth.route("api/login", methods = ["GET"])
 def login():
     auth = request.authorization
     if not auth or not auth.password or not auth.username:
@@ -54,7 +57,7 @@ def login():
     return make_response('Could not verify', 401, {'WWW-Authenticate' : 'Basic realm="Login required!"'})
 
 
-@auth.route("/register", methods=["POST"])
+@auth.route("api/register", methods=["POST"])
 def register():
     if request.method == "POST":
         data = request.get_json()
