@@ -6,10 +6,8 @@ import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import config
-from flask_cors import CORS
 
 auth = Blueprint("auth",__name__)
-CORS(auth)
 
 
 def token_required(f):

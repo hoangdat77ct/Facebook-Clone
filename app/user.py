@@ -2,10 +2,8 @@ from flask import jsonify, Blueprint,request
 from app.db import query_CUD, query_select
 from app.auth import token_required
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_cors import CORS
 
 user = Blueprint("user",__name__)
-CORS(user)
 
 @user.route('/api/user', methods=['GET'])
 @token_required

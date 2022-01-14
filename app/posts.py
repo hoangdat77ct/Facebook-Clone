@@ -3,10 +3,8 @@ from flask import jsonify, Blueprint,request
 from app.db import query_CUD, query_select
 import config
 from app.auth import token_required
-from flask_cors import CORS
 
 posts = Blueprint("posts",__name__)
-CORS(posts)
 
 @posts.route('/api/post/<int:id>')
 @token_required
