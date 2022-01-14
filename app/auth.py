@@ -38,7 +38,7 @@ def token_required(f):
 
     return decorated
 
-@auth.route("api/login", methods = ["GET"])
+@auth.route("/api/login", methods = ["GET"])
 def login():
     auth = request.authorization
     if not auth or not auth.password or not auth.username:
@@ -57,7 +57,7 @@ def login():
     return make_response('Could not verify', 401, {'WWW-Authenticate' : 'Basic realm="Login required!"'})
 
 
-@auth.route("api/register", methods=["POST"])
+@auth.route("/api/register", methods=["POST"])
 def register():
     if request.method == "POST":
         data = request.get_json()

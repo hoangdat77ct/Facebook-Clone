@@ -8,7 +8,7 @@ from flask_cors import CORS
 posts = Blueprint("posts",__name__)
 CORS(posts)
 
-@posts.route('api/post/<int:id>')
+@posts.route('/api/post/<int:id>')
 @token_required
 def get_one_post(current_user,id=None):
     sql = '''
@@ -32,7 +32,7 @@ def get_one_post(current_user,id=None):
     return jsonify({"posts": res})
 
 
-@posts.route('api/posts/<int:user_id>')
+@posts.route('/api/posts/<int:user_id>')
 @token_required
 def get_all_posts(current_user,user_id):
     if current_user[0][0] != user_id:
@@ -79,7 +79,7 @@ def get_all_posts(current_user,user_id):
     return jsonify({"posts": res})
 
 
-@posts.route("api/add-post",methods=["POST"])
+@posts.route("/api/add-post",methods=["POST"])
 @token_required
 def add_post(current_user):
     if request.method == "POST":
@@ -99,7 +99,7 @@ def add_post(current_user):
         query_CUD(sql, values)
         return jsonify({"Message": "Post successfully!!!"}),200
 
-@posts.route("api/update-post/<int:id>", methods = ["PUT"])
+@posts.route("/api/update-post/<int:id>", methods = ["PUT"])
 @token_required
 def update_post(current_user,id=None):
     if request.method == "PUT":
@@ -118,7 +118,7 @@ def update_post(current_user,id=None):
             return jsonify({"Message": "Successfully"}),200
 
 
-@posts.route("api/delete-post/<int:id>", methods = ["DELETE"])
+@posts.route("/api/delete-post/<int:id>", methods = ["DELETE"])
 @token_required
 def delete_post(current_user,id=None):
     if request.method == "DELETE":
@@ -130,7 +130,7 @@ def delete_post(current_user,id=None):
             query_CUD(sql, value)
             return jsonify({"Post deleted": True}), 200
 
-@posts.route("api/sreach", methods = ["GET"])
+@posts.route("/api/sreach", methods = ["GET"])
 @token_required
 def sreach(current_user):
         key = request.args.get('keyword', '')

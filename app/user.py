@@ -7,7 +7,7 @@ from flask_cors import CORS
 user = Blueprint("user",__name__)
 CORS(user)
 
-@user.route('api/user', methods=['GET'])
+@user.route('/api/user', methods=['GET'])
 @token_required
 def get_all_users(current_user):
     sql = '''
@@ -29,7 +29,7 @@ def get_all_users(current_user):
     return jsonify({"user": res})
 
 
-@user.route('api/user/<int:id>')
+@user.route('/api/user/<int:id>')
 @token_required
 def get_one_user(current_user,id):
     if request.method == "GET":
@@ -54,7 +54,7 @@ def get_one_user(current_user,id):
         return jsonify({"user": res})
 
 
-@user.route("api/update-avatar", methods = ["PUT"])
+@user.route("/api/update-avatar", methods = ["PUT"])
 @token_required
 def update_avatar(current_user):
     if request.method == "PUT":
@@ -71,7 +71,7 @@ def update_avatar(current_user):
             return jsonify({'Message' : 'Failed!'}),400
 
 
-@user.route("api/update-coverimg", methods = ["PUT"])
+@user.route("/api/update-coverimg", methods = ["PUT"])
 @token_required
 def update_cover_img(current_user):
     if request.method == "PUT":
@@ -92,7 +92,7 @@ def update_cover_img(current_user):
 
 
 
-@user.route("api/update-user", methods = ["PUT"])
+@user.route("/api/update-user", methods = ["PUT"])
 @token_required
 def update_user(current_user):
     if request.method == "PUT":
@@ -112,7 +112,7 @@ def update_user(current_user):
             return jsonify({'Message' : 'Failed!'}),400
 
 
-@user.route("api/update-password", methods = ["PUT"])
+@user.route("/api/update-password", methods = ["PUT"])
 @token_required
 def update_password(current_user):
     try:
