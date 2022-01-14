@@ -42,16 +42,24 @@ def login():
     if not auth or not auth.password or not auth.username:
         return make_response("Could not verify",401, {"WWW-Authenticate"})
     sql = '''
-    SELECT user_name, password FROM user where user_name = %s
+    SELECT * FROM user where user_name = %s
     '''
     value = (auth.username, )
     user = query_select(sql, value)
     if not user:
         return make_response('Could not verify', 401, {'WWW-Authenticate' : 'Basic realm="Login required!"'})
 
-    if auth.username == user[0][0] and check_password_hash(user[0][1],auth.password):
+    if auth.username == user[0][6] and check_password_hash(user[0][7],auth.password):
         token = jwt.encode({'username' : user[0][0], 'exp' : datetime.datetime.utcnow() + datetime.timedelta(days=30)}, config.SECRET_KEY)
-        return jsonify({'token' : token.decode('UTF-8')})
+        res = []
+        res.append({
+            "user_id": user[0][0],
+            "public_name": user[0][1],
+            "phone": user[0][4],
+            "email": user[0][5],
+            'token' : token.decode('UTF-8')
+        })
+        return jsonify({"user" : res}),200
     return make_response('Could not verify', 401, {'WWW-Authenticate' : 'Basic realm="Login required!"'})
 
 
