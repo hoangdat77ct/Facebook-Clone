@@ -1,13 +1,13 @@
 from flask import jsonify, Blueprint,request
 from app.db import query_CUD, query_select
-from app.auth import token_required
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 user = Blueprint("user",__name__)
 
 @user.route('/api/user', methods=['GET'])
-@token_required
-def get_all_users(current_user):
+@jwt_required()
+def get_all_users():
     sql = '''
     SELECT user_id,public_name, avatar, cover_img, phone, email FROM user
     '''
@@ -28,8 +28,8 @@ def get_all_users(current_user):
 
 
 @user.route('/api/user/<int:id>')
-@token_required
-def get_one_user(current_user,id):
+@jwt_required()
+def get_one_user(id):
     if request.method == "GET":
         if id:
             sql = '''
@@ -53,8 +53,8 @@ def get_one_user(current_user,id):
 
 
 @user.route("/api/update-avatar", methods = ["PUT"])
-@token_required
-def update_avatar(current_user):
+@jwt_required()
+def update_avatar():
     if request.method == "PUT":
         try:
             data = request.get_json()
@@ -62,7 +62,7 @@ def update_avatar(current_user):
             sql = '''
             UPDATE user SET avatar=%s where user_id=%s
             '''
-            value = (avatar,current_user[0][0], )
+            value = (avatar,get_jwt_identity(), )
             query_CUD(sql, value)
             return jsonify({"Message":"Successfully!"}),200
         except:
@@ -70,8 +70,8 @@ def update_avatar(current_user):
 
 
 @user.route("/api/update-coverimg", methods = ["PUT"])
-@token_required
-def update_cover_img(current_user):
+@jwt_required()
+def update_cover_img():
     if request.method == "PUT":
         try:
             data = request.get_json()
@@ -81,7 +81,7 @@ def update_cover_img(current_user):
             sql = '''
             UPDATE user SET cover_img=%s where user_id=%s
             '''
-            values = (cover_img,current_user[0][0], )
+            values = (cover_img,get_jwt_identity(), )
             query_CUD(sql, values)
             return jsonify({"Message": "Successfully!"}),200
         except:
@@ -91,8 +91,8 @@ def update_cover_img(current_user):
 
 
 @user.route("/api/update-user", methods = ["PUT"])
-@token_required
-def update_user(current_user):
+@jwt_required()
+def update_user():
     if request.method == "PUT":
         try:
             data = request.get_json()
@@ -103,23 +103,25 @@ def update_user(current_user):
             sql = '''
             UPDATE user SET public_name=%s, avatar=%s, cover_img=%s WHERE user_id=%s
             '''
-            values = (public_name,avatar,cover_img,current_user[0][0], )
-            query_CUD(sql, values)
             return jsonify({"Message": "Successfully!"}),200
         except:
             return jsonify({'Message' : 'Failed!'}),400
 
 
 @user.route("/api/update-password", methods = ["PUT"])
-@token_required
-def update_password(current_user):
+@jwt_required()
+def update_password():
     try:
         if request.method == "PUT":
             data = request.get_json()
             old_password = data["old_password"]
             new_password = data["new_password"]
             confirm_password = data["confirm_password"]
-
+            sql = '''
+            SELECT * FROM user where user_name = %s
+            '''
+            value = (data['username'], )
+            current_user = query_select(sql, value)
             if new_password != confirm_password:
                 return jsonify({'Message' : 'Confirm password is not the same'})
             if old_password != new_password and check_password_hash(current_user[0][7],old_password):
@@ -127,7 +129,7 @@ def update_password(current_user):
                 sql = '''
                 UPDATE user SET password=%s WHERE user_id=%s
                 '''
-                value = (new_password,current_user[0][0], )
+                value = (new_password,get_jwt_identity(), )
                 query_CUD(sql, value)
                 return jsonify({"Message": "Successfully!"}),200
     except:

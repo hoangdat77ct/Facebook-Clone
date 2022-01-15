@@ -1,14 +1,13 @@
-import json
 from flask import jsonify, Blueprint,request
 from app.db import query_CUD, query_select
-import config
-from app.auth import token_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 
 posts = Blueprint("posts",__name__)
 
 @posts.route('/api/post/<int:id>')
-@token_required
-def get_one_post(current_user,id=None):
+@jwt_required()
+def get_one_post(id=None):
     sql = '''
         SELECT `article_id`, article.`user_id`, `content`, `static_file`,
         `publish_time`, `status`, user.public_name FROM `article`,`user`
@@ -31,9 +30,9 @@ def get_one_post(current_user,id=None):
 
 
 @posts.route('/api/posts/<int:user_id>')
-@token_required
-def get_all_posts(current_user,user_id):
-    if current_user[0][0] != user_id:
+@jwt_required()
+def get_all_posts(user_id):
+    if get_jwt_identity() != user_id:
         sql = '''
             SELECT `article_id`, article.`user_id`, `content`, `static_file`,
             `publish_time`, `status`, user.public_name FROM `article`,`user`
@@ -78,12 +77,12 @@ def get_all_posts(current_user,user_id):
 
 
 @posts.route("/api/add-post",methods=["POST"])
-@token_required
-def add_post(current_user):
+@jwt_required()
+def add_post():
     if request.method == "POST":
         data = request.get_json()
 
-        user_id = current_user[0][0]
+        user_id = get_jwt_identity()
         content = data["content"]
         static_file = data["static_file"]
         status = data["status"]
@@ -98,8 +97,8 @@ def add_post(current_user):
         return jsonify({"Message": "Post successfully!!!"}),200
 
 @posts.route("/api/update-post/<int:id>", methods = ["PUT"])
-@token_required
-def update_post(current_user,id=None):
+@jwt_required()
+def update_post(id=None):
     if request.method == "PUT":
         if id:
             data = request.get_json()
@@ -111,29 +110,29 @@ def update_post(current_user,id=None):
             sql = '''
             UPDATE article SET content=%s, static_file=%s, status=%s where article_id = %s and user_id=%s
             '''
-            value = (content,static_file,status,id,current_user[0][0], )
+            value = (content,static_file,status,id,get_jwt_identity(), )
             query_CUD(sql, value)
             return jsonify({"Message": "Successfully"}),200
 
 
 @posts.route("/api/delete-post/<int:id>", methods = ["DELETE"])
-@token_required
-def delete_post(current_user,id=None):
+@jwt_required()
+def delete_post(id=None):
     if request.method == "DELETE":
         if id:
             sql = '''
             DELETE FROM article where article_id=%s and user_id=%s
             '''
-            value = (id,current_user[0][0], )
+            value = (id,get_jwt_identity(), )
             query_CUD(sql, value)
             return jsonify({"Post deleted": True}), 200
 
 @posts.route("/api/sreach", methods = ["GET"])
-@token_required
-def sreach(current_user):
+@jwt_required()
+def sreach():
         key = request.args.get('keyword', '')
         sql = f'''
-        SELECT * FROM user WHERE public_name LIKE "%{key}%" and user_id != "{current_user[0][0]}"
+        SELECT * FROM user WHERE public_name LIKE "%{key}%" and user_id != "{get_jwt_identity()}"
         '''
         users = query_select(sql)
         if not users:
