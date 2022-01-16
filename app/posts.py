@@ -17,21 +17,77 @@ def get_one_post(id=None):
     posts = query_select(sql,value)
     if not posts:
         return jsonify({'message' : 'No post found!'})
-    res = []
-    res.append({
+    res = {
         'user_id' : posts[0][1],
         'user_name': posts[0][6],
+        'article_id': id,
         'content' : posts[0][2],
         'static_file': posts[0][3],
         'publish_time': str(posts[0][4]),
         'status' : posts[0][5]
-    })
+    }
     return jsonify({"posts": res})
+
+
+@posts.route("/api/posts")
+@jwt_required()
+def get_all_posts():
+    try:
+        sql = '''
+            SELECT `article_id`, article.`user_id`, `content`, `static_file`,
+            `publish_time`, `status`, user.public_name FROM `article`,`user`
+            WHERE article.user_id=user.user_id
+            '''
+        posts = query_select(sql)
+        if not posts:
+            return jsonify({'message' : 'No posts found!'})
+        res = []
+        for post in posts:
+            res.append({
+                'user_id' : post[1],
+                'user_name': post[6],
+                'article_id': post[0],
+                'content' : post[2],
+                'static_file': post[3],
+                'publish_time': post[4],
+                'status' : post[5]
+            })
+        return jsonify({"posts": res})
+    except:
+        return jsonify({'message' : 'Failed'}),404
 
 
 @posts.route('/api/posts/<int:user_id>')
 @jwt_required()
-def get_all_posts(user_id):
+def get_all_posts_by_user_id(user_id=None):
+        sql = '''
+            SELECT `article_id`, article.`user_id`, `content`, `static_file`,
+            `publish_time`, `status`, user.public_name FROM `article`,`user`
+            WHERE article.user_id=user.user_id and article.user_id=%s
+            '''
+        value = (user_id, )
+        posts = query_select(sql, value)
+        if not posts:
+            return jsonify({'message' : 'No posts found!'})
+        res = []
+        for post in posts:
+            res.append({
+                'user_id' : post[1],
+                'user_name': post[6],
+                'article_id': post[0],
+                'content' : post[2],
+                'static_file': post[3],
+                'publish_time': post[4],
+                'status' : post[5]
+            })
+
+        return jsonify({"posts": res})
+
+
+"""
+@posts.route('/api/all-posts/<int:user_id>')
+@jwt_required()
+def get_all_posts_status(user_id):
     if get_jwt_identity() != user_id:
         sql = '''
             SELECT `article_id`, article.`user_id`, `content`, `static_file`,
@@ -47,6 +103,7 @@ def get_all_posts(user_id):
             res.append({
                 'user_id' : post[1],
                 'user_name': post[6],
+                'article_id': post[0],
                 'content' : post[2],
                 'static_file': post[3],
                 'publish_time': post[4],
@@ -67,6 +124,7 @@ def get_all_posts(user_id):
             res.append({
                 'user_id' : post[1],
                 'user_name': post[6],
+                'article_id': post[0],
                 'content' : post[2],
                 'static_file': post[3],
                 'publish_time': post[4],
@@ -74,6 +132,7 @@ def get_all_posts(user_id):
             })
 
     return jsonify({"posts": res})
+"""
 
 
 @posts.route("/api/add-post",methods=["POST"])
@@ -81,7 +140,6 @@ def get_all_posts(user_id):
 def add_post():
     if request.method == "POST":
         data = request.get_json()
-
         user_id = get_jwt_identity()
         content = data["content"]
         static_file = data["static_file"]
@@ -95,6 +153,7 @@ def add_post():
         values = (user_id,content,static_file,status, )
         query_CUD(sql, values)
         return jsonify({"Message": "Post successfully!!!"}),200
+
 
 @posts.route("/api/update-post/<int:id>", methods = ["PUT"])
 @jwt_required()
@@ -127,21 +186,3 @@ def delete_post(id=None):
             query_CUD(sql, value)
             return jsonify({"Post deleted": True}), 200
 
-@posts.route("/api/sreach", methods = ["GET"])
-@jwt_required()
-def sreach():
-        key = request.args.get('keyword', '')
-        sql = f'''
-        SELECT * FROM user WHERE public_name LIKE "%{key}%" and user_id != "{get_jwt_identity()}"
-        '''
-        users = query_select(sql)
-        if not users:
-            return jsonify("")
-        res = []
-        for user in users:
-            res.append({
-                'public_name' : user[1],
-                'phone': user[4],
-                'avatar' : user[2],
-            })
-        return jsonify({"users": res}), 200
