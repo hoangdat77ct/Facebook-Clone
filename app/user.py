@@ -14,7 +14,8 @@ user = Blueprint("user",__name__)
 @jwt_required()
 def get_all_users():
     sql = '''
-    SELECT user_id,public_name, avatar, cover_img, phone, email,public_status FROM user
+    SELECT user_id,public_name, avatar, cover_img, phone, email,
+    public_status, user_name FROM user
     '''
     users = query_select(sql)
     if not users:
@@ -23,7 +24,8 @@ def get_all_users():
     for user in users:
         res.append({
             'user_id' : user[0],
-            'user_name': user[1],
+            'user_name': user[7],
+            'public_name': user[1],
             'public_status': user[6],
             'avatar' : user[2],
             'cover_img': user[3],
@@ -33,48 +35,30 @@ def get_all_users():
     return jsonify({"user": res})
 
 
-@user.route('/api/user/<int:id>')
+@user.route('/api/user/<string:user_name>')
 @jwt_required()
-def get_one_user(id):
+def get_one_user(user_name):
     if request.method == "GET":
-        if id != get_jwt_identity():
-            sql = '''
-            SELECT user_id,public_name, avatar, cover_img, phone, email, public_status
-            FROM user where user_id=%s
+        sql = '''
+            SELECT user_id,public_name, avatar, cover_img, phone, email,
+            public_status, user_name FROM user where user_name=%s
             '''
-            value = (id, )
-            user = query_select(sql,value)
-            if not user:
-                return jsonify({'message' : 'No user found!'}),404
-            res = {
-                'user_id' : user[0][0],
-                'public_name': user[0][1],
-                'avatar' : user[0][2],
-                'cover_img': user[0][3],
-                'phone': user[0][4],
-                'email' : user[0][5],
-                'public_status': user[0][6]
-            }
-            if user[0][6] == 0:
-                return jsonify({'message' : 'User is in a non-public state'}),404
-        else:
-            sql = '''
-            SELECT user_id,public_name, avatar, cover_img, phone, email, public_status
-            FROM user where user_id=%s
-            '''
-            value = (id, )
-            user = query_select(sql,value)
-            if not user:
-                return jsonify({'message' : 'No user found!'})
-            res = {
-                'user_id' : user[0][0],
-                'public_name': user[0][1],
-                'avatar' : user[0][2],
-                'cover_img': user[0][3],
-                'phone': user[0][4],
-                'email' : user[0][5],
-                'public_status': user[0][6]
-                }
+        value = (user_name, )
+        user = query_select(sql,value)
+        if not user:
+            return jsonify({'message' : 'No user found!'}),404
+        res = {
+            'user_id' : user[0][0],
+            'public_name': user[0][1],
+            'avatar' : user[0][2],
+            'cover_img': user[0][3],
+            'phone': user[0][4],
+            'email' : user[0][5],
+            'user_name': user[0][7],
+            'public_status': user[0][6]
+        }
+        if user[0][0] != get_jwt_identity() and user[0][6] == 0:
+            return jsonify({'message' : 'User is in a non-public state'}),404
         return jsonify({"user": res})
 
 
@@ -83,8 +67,11 @@ def get_one_user(id):
 def update_avatar():
     if request.method == "PUT":
         try:
-            data = request.get_json()
-            avatar = data["avatar"]
+            try:
+                data = request.get_json()
+                avatar = data["avatar"]
+            except:
+                return jsonify({"Message": "Field requied"}),422
             sql = '''
             UPDATE user SET avatar=%s where user_id=%s
             '''
@@ -100,8 +87,11 @@ def update_avatar():
 def update_cover_img():
     if request.method == "PUT":
         try:
-            data = request.get_json()
-            cover_img = data["cover_img"]
+            try:
+                data = request.get_json()
+                cover_img = data["cover_img"]
+            except:
+                return jsonify({"Message": "Field requied"}),422
             sql = '''
             UPDATE user SET cover_img=%s where user_id=%s
             '''
@@ -117,11 +107,13 @@ def update_cover_img():
 def update_user():
     if request.method == "PUT":
         try:
-            data = request.get_json()
-            public_name = data["public_name"]
-            avatar = data["avatar"]
-            cover_img = data["cover_img"]
-
+            try:
+                data = request.get_json()
+                public_name = data["public_name"]
+                avatar = data["avatar"]
+                cover_img = data["cover_img"]
+            except:
+                return jsonify({"Message": "Field requied"}),422
             sql = '''
             UPDATE user SET public_name=%s, avatar=%s, cover_img=%s WHERE user_id=%s
             '''
@@ -135,7 +127,10 @@ def update_user():
 @user.route("/api/sreach", methods = ["GET"])
 @jwt_required()
 def sreach():
-        key = request.args.get('keyword', None)
+        try:
+            key = request.args.get('keyword', None)
+        except:
+            return jsonify({"Message": "Field requied"}),422
         sql = f'''
         SELECT * FROM user WHERE public_name LIKE "%{key}%"
         and user_id!={get_jwt_identity()} and public_status=1
@@ -147,6 +142,8 @@ def sreach():
         res = []
         for user in users:
             res.append({
+                'user_id' : user[0],
+                'user_name' : user[6],
                 'public_name' : user[1],
                 'phone': user[4],
                 'avatar' : user[2],
@@ -157,8 +154,11 @@ def sreach():
 @user.route("/api/forgot-password", methods = ["GET","POST"])
 def forgot_password():
     if request.method == "POST":
-        data = request.get_json()
-        email = data["email"]
+        try:
+            data = request.get_json()
+            email = data["email"]
+        except:
+            return jsonify({"Message": "Field requied"}),422
         token = jwt.encode({"email":email, 'exp' : datetime.datetime.utcnow() +
                 datetime.timedelta(minutes=10)}, config.SECRET_KEY)
         content = f"""\
@@ -184,10 +184,13 @@ def refresh_password(token=None):
     if token == access_token:
         try:
             if request.method == "POST":
-                data = request.get_json()
-                old_password = data["old_password"]
-                new_password = data["new_password"]
-                confirm_password = data["confirm_password"]
+                try:
+                    data = request.get_json()
+                    old_password = data["old_password"]
+                    new_password = data["new_password"]
+                    confirm_password = data["confirm_password"]
+                except:
+                    return jsonify({"Message": "Field requied"}),422
                 data = jwt.decode(token, config.SECRET_KEY,algorithms="HS256")
                 print(data)
                 sql = '''

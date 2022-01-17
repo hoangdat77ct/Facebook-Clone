@@ -54,14 +54,17 @@ def login():
 @auth.route("/api/register_user", methods=["GET","POST"])
 def register():
     if request.method == "POST":
-        data = request.get_json()
-        res = {
-            "public_name" : data["public_name"],
-            "user_name" : data["user_name"],
-            "password" : generate_password_hash(data['password'], method='sha256'),
-            "phone" : data["phone"],
-            "email" : data["email"]
-        }
+        try:
+            data = request.get_json()
+            res = {
+                "public_name" : data["public_name"],
+                "user_name" : data["user_name"],
+                "password" : generate_password_hash(data['password'], method='sha256'),
+                "phone" : data["phone"],
+                "email" : data["email"]
+            }
+        except:
+            return jsonify({"Message": "Field requied"}),422
         token = jwt.encode({"register_user":res, 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=10)}, config.SECRET_KEY)
         content = f"""\
             Dear {data["public_name"]},

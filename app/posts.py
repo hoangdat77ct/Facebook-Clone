@@ -1,3 +1,4 @@
+from email.message import Message
 from flask import jsonify, Blueprint,request
 from app.db import query_CUD, query_select
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -20,7 +21,7 @@ def get_one_post(id=None):
     res = {
         'user_id' : posts[0][1],
         'user_name': posts[0][6],
-        'article_id': id,
+        'article_id': posts[0][0],
         'content' : posts[0][2],
         'static_file': posts[0][3],
         'publish_time': str(posts[0][4]),
@@ -139,13 +140,16 @@ def get_all_posts_status(user_id):
 @jwt_required()
 def add_post():
     if request.method == "POST":
-        data = request.get_json()
-        user_id = get_jwt_identity()
-        content = data["content"]
-        static_file = data["static_file"]
-        status = data["status"]
+        try:
+            data = request.get_json()
+            user_id = get_jwt_identity()
+            content = data["content"]
+            static_file = data["static_file"]
+            status = data["status"]
+        except:
+            return jsonify({"Message": "Field requied"}),422
         if not content and not static_file:
-            return jsonify({"Fail"})
+            return jsonify({"Fail"}),404
         sql = '''
         INSERT INTO article(user_id,content,static_file,publish_time,status)
         VALUES(%s,%s,%s,NOW(),%s)
@@ -160,12 +164,13 @@ def add_post():
 def update_post(id=None):
     if request.method == "PUT":
         if id:
-            data = request.get_json()
-
-            content = data["content"]
-            static_file = data["static_file"]
-            status = data["status"]
-
+            try:
+                data = request.get_json()
+                content = data["content"]
+                static_file = data["static_file"]
+                status = data["status"]
+            except:
+                return jsonify({"Message": "Field requied"}),422
             sql = '''
             UPDATE article SET content=%s, static_file=%s, status=%s where article_id = %s and user_id=%s
             '''
