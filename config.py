@@ -9,4 +9,5 @@ MAIL_PORT = 465
 MAIL_USERNAME = 'datnguyen.mkd@gmail.com'
 MAIL_PASSWORD = 'Hoangdat77ct'
 MAIL_USE_SSL = True
-
+UPLOAD_FOLDER = '/home/demon/BIWOCO'
+MAX_CONTENT_LENGTH = 16 * 1024 * 1024

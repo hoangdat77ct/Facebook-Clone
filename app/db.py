@@ -30,8 +30,9 @@ def query_CUD(sql, values=None):
     try:
         conn = connect()
         cursor = conn.cursor()
-        cursor.execute(sql, values)
+        res = cursor.execute(sql, values)
         conn.commit()
+        return res
     except pymysql.connect.Error as e:
         logging.error(e)
     finally:

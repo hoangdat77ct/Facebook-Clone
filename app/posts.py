@@ -1,8 +1,9 @@
-from email.message import Message
 from flask import jsonify, Blueprint,request
 from app.db import query_CUD, query_select
 from flask_jwt_extended import jwt_required, get_jwt_identity
-
+import os
+from werkzeug.utils import secure_filename
+import config
 
 posts = Blueprint("posts",__name__)
 
@@ -144,18 +145,22 @@ def add_post():
             data = request.get_json()
             user_id = get_jwt_identity()
             content = data["content"]
-            static_file = data["static_file"]
+            #static_file = request.files['file']
             status = data["status"]
+            #if static_file and allowed_file(static_file.filename):
+                #filename = secure_filename(static_file.filename)
+                #static_file.save(os.path.join(config.UPLOAD_FOLDER, filename))
         except:
             return jsonify({"Message": "Field requied"}),422
-        if not content and not static_file:
+        if not content: #and not static_file:
             return jsonify({"Fail"}),404
         sql = '''
-        INSERT INTO article(user_id,content,static_file,publish_time,status)
-        VALUES(%s,%s,%s,NOW(),%s)
+        INSERT INTO article(user_id,content,publish_time,status)
+        VALUES(%s,%s,NOW(),%s)
         '''
-        values = (user_id,content,static_file,status, )
+        values = (user_id,content,status, )
         query_CUD(sql, values)
+        
         return jsonify({"Message": "Post successfully!!!"}),200
 
 
@@ -191,3 +196,38 @@ def delete_post(id=None):
             query_CUD(sql, value)
             return jsonify({"Post deleted": True}), 200
 
+
+
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+
+
+def allowed_file(filename):
+	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@posts.route('/api/multiple-files-upload', methods=['POST'])
+def upload_file():
+	if 'files[]' not in request.files:
+		return jsonify({'message' : 'No file part in the request'}), 400
+
+	files = request.files.getlist('files[]')
+	errors = {}
+	success = False
+
+	for file in files:
+		if file and allowed_file(file.filename):
+			filename = secure_filename(file.filename)
+			file.save(os.path.join(config.UPLOAD_FOLDER, filename))
+			success = True
+		else:
+			errors[file.filename] = 'File type is not allowed'
+
+	if success and errors:
+		errors['message'] = 'File(s) successfully uploaded'
+		return jsonify(errors), 500
+
+	if success:
+		return jsonify({'message' : 'Files successfully uploaded'}), 201
+		
+	else:
+		return jsonify(errors), 500
+		

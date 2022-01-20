@@ -41,6 +41,7 @@ def login():
             refresh_token = create_refresh_token(identity=user[0][0])
             res = {
                 "user_id": user[0][0],
+                "user_name": user[0][6],
                 "public_name": user[0][1],
                 "phone": user[0][4],
                 "email": user[0][5],
@@ -69,7 +70,7 @@ def register():
         content = f"""\
             Dear {data["public_name"]},
             This is the link to verify your account registration on the web: XXX. You access the link to confirm the registration (link is valid for 10 minutes)
-            Here is the link: http://127.0.0.1:5000/api/confirm/{token}
+            Here is the link: http://127.0.0.1:3000/confirm/{token}
             Thanks,
             X
         """
@@ -91,11 +92,10 @@ def confirm(token=None):
     if token == access_token:
         try:
             data = jwt.decode(token, config.SECRET_KEY,algorithms="HS256")
-            print(data)
             sql = '''
             INSERT INTO user(public_name,user_name,password,phone,email) VALUES(%s,%s,%s,%s,%s)
             '''
-            values = (data['register_user']['public_name'],data['register_user']['user_name'], 
+            values = (data['register_user']['public_name'],data['register_user']['user_name'],
             data['register_user']['password'], data['register_user']['phone'], data['register_user']['email'], )
             query_CUD(sql, values)
             return jsonify({"Message":"Sign Up Success"}), 200
