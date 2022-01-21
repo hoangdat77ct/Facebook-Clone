@@ -35,10 +35,54 @@ def get_all_users():
     return jsonify({"user": res})
 
 
+@user.route('/api/user/guest/', methods=['GET'])
+def get_all_users_for_guest():
+    sql = '''
+    SELECT user_id, public_name, public_sttus, avatar, user_name FROM user
+    '''
+    users = query_select(sql)
+    if not users:
+        return jsonify({'message' : 'No user found!'})
+    res = []
+    for user in users:
+        res.append({
+            'user_id' : user[0],
+            'user_name': user[4],
+            'public_name': user[1],
+            'public_status': user[2],
+            'avatar' : user[3]
+        })
+    return jsonify({"user": res})
+
+
+@user.route('/api/user/<string:user_name>')
+def get_one_user_for_guest(user_name):
+        sql = '''
+            SELECT user_id,public_name, avatar, cover_img, phone, email,
+            public_status, user_name FROM user where user_name=%s
+            '''
+        value = (user_name, )
+        user = query_select(sql,value)
+        if not user:
+            return jsonify({'message' : 'No user found!'}),404
+        res = {
+            'user_id' : user[0][0],
+            'public_name': user[0][1],
+            'avatar' : user[0][2],
+            'cover_img': user[0][3],
+            'phone': user[0][4],
+            'email' : user[0][5],
+            'user_name': user[0][7],
+            'public_status': user[0][6]
+        }
+        if user[0][6] == 0:
+            return jsonify({'message' : 'User is in a non-public state'}),404
+        return jsonify({"user": res})
+
+
 @user.route('/api/user/<string:user_name>')
 @jwt_required()
 def get_one_user(user_name):
-    if request.method == "GET":
         sql = '''
             SELECT user_id,public_name, avatar, cover_img, phone, email,
             public_status, user_name FROM user where user_name=%s
@@ -112,12 +156,13 @@ def update_user():
                 public_name = data["public_name"]
                 avatar = data["avatar"]
                 cover_img = data["cover_img"]
+                public_status = data["public_status"]
             except:
                 return jsonify({"Message": "Field requied"}),422
             sql = '''
-            UPDATE user SET public_name=%s, avatar=%s, cover_img=%s WHERE user_id=%s
+            UPDATE user SET public_name=%s, avatar=%s, cover_img=%s, public_status=%s WHERE user_id=%s
             '''
-            value = (public_name,avatar,cover_img,get_jwt_identity(), )
+            value = (public_name,avatar,cover_img,public_status,get_jwt_identity(), )
             query_CUD(sql, value)
             return jsonify({"Message": "Successfully!"}),200
         except:

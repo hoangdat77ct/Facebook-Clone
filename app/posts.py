@@ -86,6 +86,31 @@ def get_all_posts_by_user_id(user_id=None):
         return jsonify({"posts": res})
 
 
+@posts.route('/api/posts-for-guest/<int:user_id>')
+def get_all_posts_by_user_id_for_guest(user_id=None):
+        sql = '''
+            SELECT `article_id`, article.`user_id`, `content`, `static_file`,
+            `publish_time`, `status`, user.public_name FROM `article`,`user`
+            WHERE article.user_id=user.user_id and article.user_id=%s
+            '''
+        value = (user_id, )
+        posts = query_select(sql, value)
+        if not posts:
+            return jsonify({'message' : 'No posts found!'})
+        res = []
+        for post in posts:
+            res.append({
+                'user_id' : post[1],
+                'user_name': post[6],
+                'article_id': post[0],
+                'content' : post[2],
+                'static_file': post[3],
+                'publish_time': post[4],
+                'status' : post[5]
+            })
+        return jsonify({"posts": res})
+
+
 """
 @posts.route('/api/all-posts/<int:user_id>')
 @jwt_required()
@@ -145,21 +170,19 @@ def add_post():
             data = request.get_json()
             user_id = get_jwt_identity()
             content = data["content"]
-            #static_file = request.files['file']
+            static_file = data['static_file']
             status = data["status"]
-            #if static_file and allowed_file(static_file.filename):
-                #filename = secure_filename(static_file.filename)
-                #static_file.save(os.path.join(config.UPLOAD_FOLDER, filename))
+
         except:
             return jsonify({"Message": "Field requied"}),422
         if not content: #and not static_file:
             return jsonify({"Fail"}),404
         sql = '''
-        INSERT INTO article(user_id,content,publish_time,status)
-        VALUES(%s,%s,NOW(),%s)
+        INSERT INTO article(user_id,content,static_file,publish_time,status)
+        VALUES(%s,%s,%s,NOW(),%s)
         '''
-        values = (user_id,content,status, )
-        query_CUD(sql, values)
+        values = (user_id,content,static_file,status, )
+        res=query_CUD(sql, values)
         
         return jsonify({"Message": "Post successfully!!!"}),200
 
@@ -209,7 +232,8 @@ def upload_file():
 	if 'files[]' not in request.files:
 		return jsonify({'message' : 'No file part in the request'}), 400
 
-	files = request.files.getlist('files[]')
+    #file = request.files('file')
+	files = request.files.getlist('files')
 	errors = {}
 	success = False
 
@@ -227,7 +251,5 @@ def upload_file():
 
 	if success:
 		return jsonify({'message' : 'Files successfully uploaded'}), 201
-		
 	else:
 		return jsonify(errors), 500
-		
