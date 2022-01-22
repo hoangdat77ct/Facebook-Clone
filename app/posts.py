@@ -232,6 +232,7 @@ def upload_file():
     if 'files' not in request.files:
         return jsonify({'message' : 'No file part in the request'}), 400
     files = request.files.getlist('files')
+    list_files = []
     errors = {}
     success = False
     for file in files:
@@ -241,13 +242,14 @@ def upload_file():
             filename = secure_filename(str(val)+format_img[1])
             file.save(os.path.join(config.UPLOAD_FOLDER, filename))
             success = True
+            list_files.append(filename)
         else:
             errors[file.filename] = 'File type is not allowed'
     if success and errors:
         errors[file.filename] = 'File type is not allowed'
         return jsonify(errors), 500
     if success:
-        return jsonify({'filename': filename,'message' : 'Files successfully uploaded'}), 201
+        return jsonify({'filename': list_files,'message' : 'Files successfully uploaded'}), 201
     else:
         return jsonify(errors), 500
 
