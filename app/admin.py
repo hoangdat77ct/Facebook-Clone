@@ -70,8 +70,6 @@ def delete_user(user_id=None):
 
 
 
-
-
 @admin.route("/api/admin/update-post/<int:id>", methods = ["PUT"])
 @jwt_required()
 def update_post(id=None):

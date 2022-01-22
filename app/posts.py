@@ -1,4 +1,5 @@
-from flask import jsonify, Blueprint,request
+import random
+from flask import jsonify, Blueprint,request,send_file
 from app.db import query_CUD, query_select
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import os
@@ -183,7 +184,6 @@ def add_post():
         '''
         values = (user_id,content,static_file,status, )
         res=query_CUD(sql, values)
-        
         return jsonify({"Message": "Post successfully!!!"}),200
 
 
@@ -229,27 +229,32 @@ def allowed_file(filename):
 
 @posts.route('/api/multiple-files-upload', methods=['POST'])
 def upload_file():
-	if 'files[]' not in request.files:
-		return jsonify({'message' : 'No file part in the request'}), 400
+    if 'files' not in request.files:
+        return jsonify({'message' : 'No file part in the request'}), 400
+    files = request.files.getlist('files')
+    errors = {}
+    success = False
+    for file in files:
+        if file and allowed_file(file.filename):
+            val = random.randint(100000,9999999)
+            format_img = os.path.splitext(file.filename)
+            filename = secure_filename(str(val)+format_img[1])
+            file.save(os.path.join(config.UPLOAD_FOLDER, filename))
+            success = True
+        else:
+            errors[file.filename] = 'File type is not allowed'
+    if success and errors:
+        errors[file.filename] = 'File type is not allowed'
+        return jsonify(errors), 500
+    if success:
+        return jsonify({'filename': filename,'message' : 'Files successfully uploaded'}), 201
+    else:
+        return jsonify(errors), 500
 
-    #file = request.files('file')
-	files = request.files.getlist('files')
-	errors = {}
-	success = False
 
-	for file in files:
-		if file and allowed_file(file.filename):
-			filename = secure_filename(file.filename)
-			file.save(os.path.join(config.UPLOAD_FOLDER, filename))
-			success = True
-		else:
-			errors[file.filename] = 'File type is not allowed'
-
-	if success and errors:
-		errors['message'] = 'File(s) successfully uploaded'
-		return jsonify(errors), 500
-
-	if success:
-		return jsonify({'message' : 'Files successfully uploaded'}), 201
-	else:
-		return jsonify(errors), 500
+@posts.route('/api/get-img/<string:file>')
+def get_img(file=None):
+    if file == None:
+        return jsonify({'message' : 'No file found!'})
+    filename = config.UPLOAD_FOLDER+file
+    return send_file(filename)
