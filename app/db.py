@@ -1,4 +1,3 @@
-from os import error
 import pymysql
 import logging
 logging.basicConfig(filename='../debug_log.log',level=logging.DEBUG)

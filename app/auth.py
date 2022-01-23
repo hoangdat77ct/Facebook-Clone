@@ -97,8 +97,11 @@ def confirm(token=None):
             '''
             values = (data['register_user']['public_name'],data['register_user']['user_name'],
             data['register_user']['password'], data['register_user']['phone'], data['register_user']['email'], )
-            query_CUD(sql, values)
-            return jsonify({"Message":"Sign Up Success"}), 200
+            res = query_CUD(sql, values)
+            if res == 1:
+                return jsonify({"Message":"Sign Up Success"}), 200
+            else:
+                return jsonify({'Message' : 'Failed!'}),400
         except:
             return jsonify({'message' : 'Token is invalid!'}), 401
     else:
