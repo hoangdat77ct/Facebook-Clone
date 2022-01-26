@@ -94,7 +94,7 @@ def delete_user(user_id=None):
             return jsonify({'Message' : 'Failed!'}),400
 
 
-@admin.route("/api/admin/posts")
+@admin.route("/api/posts")
 @jwt_required()
 def get_all_posts():
     try:

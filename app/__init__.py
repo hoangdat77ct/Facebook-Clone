@@ -21,3 +21,6 @@ app.register_blueprint(posts.posts)
 
 from . import user
 app.register_blueprint(user.user)
+
+from . import admin
+app.register_blueprint(admin.admin)

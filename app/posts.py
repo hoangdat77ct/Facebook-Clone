@@ -1,4 +1,3 @@
-from fileinput import filename
 import hashlib
 import random
 from flask import jsonify, Blueprint,request,send_file
